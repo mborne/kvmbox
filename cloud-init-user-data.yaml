@@ -1,0 +1,22 @@
+#cloud-config
+hostname: ${vm_name}
+manage_etc_hosts: true
+ssh_pwauth: true
+users:
+  - name: ubuntu
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    groups: users,admin
+    home: /home/ubuntu
+    shell: /bin/bash
+    lock_passwd: false
+    passwd: ${ubuntu_password_hash}
+    chpasswd:
+      expire: false
+
+package_update: false
+packages:
+  - curl
+  - htop
+
+runcmd:
+  - echo 'Cloud-init termine' > /home/ubuntu/ready.txt

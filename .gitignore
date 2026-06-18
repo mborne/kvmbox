@@ -1,0 +1,37 @@
+# Terraform / OpenTofu local working directories
+.terraform/
+
+# State files (contain infrastructure metadata and can include sensitive values)
+*.tfstate
+*.tfstate.*
+
+# Crash logs
+crash.log
+crash.*.log
+
+# CLI config files (local user settings)
+.terraformrc
+terraform.rc
+
+# Dependency lock file: usually keep this committed for reproducible providers
+# Uncomment the next line only if you explicitly do not want to track it
+.terraform.lock.hcl
+
+# Override files
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Variable definitions that often contain secrets
+*.tfvars
+*.tfvars.json
+*.auto.tfvars
+*.auto.tfvars.json
+
+# Plan output files
+*.tfplan
+*.plan
+
+# Terraform lock info
+.terraform.tfstate.lock.info
