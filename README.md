@@ -5,6 +5,7 @@
 ## Requirements
 
 - Terraform or OpenTofu
+- libvirt / KVM
 
 ## Usage
 
