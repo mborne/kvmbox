@@ -2,6 +2,7 @@ terraform {
   required_providers {
     libvirt = {
       source = "dmacvicar/libvirt"
+      version = "~> 0.9.0"
     }
   }
 }
@@ -54,11 +55,13 @@ provider "libvirt" {
 }
 
 resource "libvirt_pool" "main" {
-  name = "tf-pool"
+  name = "kvmbox"
   type = "dir"
 
   target = {
-    path = "/var/lib/libvirt/pools/tf-pool"
+    # IMPORTANT : rester dans le répertoire par défaut de libvirt
+    # (sinon, problème avec apparmor)
+    path = "/var/lib/libvirt/images/kvmbox"
   }
 }
 
