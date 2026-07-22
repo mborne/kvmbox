@@ -27,6 +27,11 @@ variable "vm_disk_size_bytes" {
   default = 21474836480
 }
 
+variable "storage_pool_name" {
+  type    = string
+  default = "default"
+}
+
 variable "ubuntu_password_hash" {
   type    = string
   # echo "ChangeIt" | mkpasswd -m sha-512 -s
@@ -54,21 +59,10 @@ provider "libvirt" {
   uri = "qemu:///system"
 }
 
-resource "libvirt_pool" "main" {
-  name = "kvmbox"
-  type = "dir"
-
-  target = {
-    # IMPORTANT : rester dans le répertoire par défaut de libvirt
-    # (sinon, problème avec apparmor)
-    path = "/var/lib/libvirt/images/kvmbox"
-  }
-}
-
 # Image de base téléchargée une seule fois
 resource "libvirt_volume" "ubuntu_base" {
   name = local.ubuntu_image_name
-  pool = libvirt_pool.main.name
+  pool = var.storage_pool_name
 
   target = {
     format = {
@@ -93,7 +87,7 @@ resource "libvirt_cloudinit_disk" "kvmbox" {
 
 resource "libvirt_volume" "kvmbox_cloudinit" {
   name = "${var.vm_name}-cloudinit.iso"
-  pool = libvirt_pool.main.name
+  pool = var.storage_pool_name
 
   target = {
     format = {
@@ -111,7 +105,7 @@ resource "libvirt_volume" "kvmbox_cloudinit" {
 # Disque de la VM : copie COW de l'image de base
 resource "libvirt_volume" "kvmbox_disk" {
   name     = "${var.vm_name}.os.qcow2"
-  pool     = libvirt_pool.main.name
+  pool     = var.storage_pool_name
   capacity = var.vm_disk_size_bytes
 
   target = {
@@ -133,6 +127,13 @@ resource "libvirt_domain" "kvmbox" {
   type   = "kvm"
   memory = var.vm_memory_mib * 1024 # KiB en provider 0.9.x
   vcpu   = var.vm_vcpus
+
+  sec_label = [
+    {
+      model = "apparmor"
+      type  = "none"
+    }
+  ]
 
   cpu = {
     mode = "host-passthrough"
@@ -167,7 +168,7 @@ resource "libvirt_domain" "kvmbox" {
         }
         source = {
           volume = {
-            pool   = libvirt_pool.main.name
+            pool   = var.storage_pool_name
             volume = libvirt_volume.kvmbox_disk.name
           }
         }
@@ -184,7 +185,7 @@ resource "libvirt_domain" "kvmbox" {
         }
         source = {
           volume = {
-            pool   = libvirt_pool.main.name
+            pool   = var.storage_pool_name
             volume = libvirt_volume.kvmbox_cloudinit.name
           }
         }
@@ -204,10 +205,6 @@ resource "libvirt_domain" "kvmbox" {
           network = {
             network = "default"
           }
-        }
-        wait_for_ip = {
-          source  = "lease"
-          timeout = 300
         }
       }
     ]
