@@ -1,4 +1,4 @@
-# Copier en terraform.tfvars puis adapter
+# Copy to terraform.tfvars and adjust
 # vm_name              = "kvmbox"
 # vm_memory_mib        = 4096
 # vm_vcpus             = 4

@@ -1,4 +1,4 @@
 output "vm_name" {
-  description = "Nom du domaine libvirt"
+  description = "Name of the libvirt domain"
   value       = libvirt_domain.kvmbox.name
 }

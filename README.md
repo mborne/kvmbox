@@ -9,18 +9,18 @@
 
 ## Structure
 
-| Fichier | Contenu |
+| File | Content |
 |---|---|
-| `providers.tf` | Versions de Terraform/OpenTofu, provider libvirt et sa configuration |
-| `variables.tf` | Paramètres (nom, CPU, RAM, disque, image, réseau...) et locals (rendu cloud-init) |
-| `main.tf` | Ressources : image de base, disque cloud-init, disque VM, domaine |
-| `outputs.tf` | Sorties |
-| `templates/` | Templates cloud-init (`user-data`, `meta-data`, `network-config`) |
-| `terraform.tfvars.example` | Exemple de surcharge des variables |
+| `providers.tf` | Terraform/OpenTofu and libvirt provider versions, provider configuration |
+| `variables.tf` | Parameters (name, CPU, RAM, disk, image, network...) and locals (cloud-init rendering) |
+| `main.tf` | Resources: base image, cloud-init disk, VM disk, domain |
+| `outputs.tf` | Outputs |
+| `templates/` | cloud-init templates (`user-data`, `meta-data`, `network-config`) |
+| `terraform.tfvars.example` | Example of variable overrides |
 
 ## Usage
 
-With Terraform :
+With Terraform:
 
 ```bash
 # download dependencies

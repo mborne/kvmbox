@@ -1,4 +1,4 @@
-# Image de base téléchargée une seule fois
+# Base image, downloaded only once
 resource "libvirt_volume" "ubuntu_base" {
   name = local.ubuntu_image_name
   pool = var.storage_pool_name
@@ -16,7 +16,7 @@ resource "libvirt_volume" "ubuntu_base" {
   }
 }
 
-# Disque de cloud-init généré à partir des données YAML
+# cloud-init disk generated from the YAML templates
 resource "libvirt_cloudinit_disk" "kvmbox" {
   name           = "${var.vm_name}-seed.iso"
   user_data      = local.cloudinit_user_data
@@ -41,7 +41,7 @@ resource "libvirt_volume" "kvmbox_cloudinit" {
   }
 }
 
-# Disque de la VM : copie COW de l'image de base
+# VM disk: copy-on-write overlay of the base image
 resource "libvirt_volume" "kvmbox_disk" {
   name     = "${var.vm_name}.os.qcow2"
   pool     = var.storage_pool_name
@@ -64,10 +64,10 @@ resource "libvirt_volume" "kvmbox_disk" {
 resource "libvirt_domain" "kvmbox" {
   name   = var.vm_name
   type   = "kvm"
-  memory = var.vm_memory_mib * 1024 # KiB en provider 0.9.x
+  memory = var.vm_memory_mib * 1024 # KiB with provider 0.9.x
   vcpu   = var.vm_vcpus
 
-  # Désactive le confinement AppArmor de la VM (inutile/impossible sans AppArmor, ex. WSL2)
+  # Disable AppArmor confinement of the VM (not possible on hosts without AppArmor, e.g. WSL2)
   sec_label = var.disable_apparmor ? [
     {
       model = "apparmor"
@@ -88,8 +88,8 @@ resource "libvirt_domain" "kvmbox" {
     type_arch    = "x86_64"
     type_machine = "q35"
     firmware     = "efi"
-    # Désactive Secure Boot (libvirt 10+ l'active par défaut avec OVMF_CODE_4M.ms.fd)
-    # Ordre alphabétique obligatoire (bug provider 0.9.x)
+    # Disable Secure Boot (enabled by default since libvirt 10 with OVMF_CODE_4M.ms.fd)
+    # Alphabetical order required (provider 0.9.x bug)
     firmware_info = {
       features = [
         { enabled = "no", name = "enrolled-keys" },
@@ -101,7 +101,7 @@ resource "libvirt_domain" "kvmbox" {
   devices = {
     disks = [
       {
-        # Driver explicite obligatoire pour qcow2 en 0.9.x !
+        # Explicit driver required for qcow2 with provider 0.9.x!
         driver = {
           name = "qemu"
           type = "qcow2"
