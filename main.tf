@@ -1,74 +1,7 @@
-terraform {
-  required_providers {
-    libvirt = {
-      source = "dmacvicar/libvirt"
-      version = "~> 0.9.0"
-    }
-  }
-}
-
-variable "vm_name" {
-  type    = string
-  default = "kvmbox"
-}
-
-variable "vm_memory_mib" {
-  type    = number
-  default = 2048
-}
-
-variable "vm_vcpus" {
-  type    = number
-  default = 2
-}
-
-variable "vm_disk_size_bytes" {
-  type    = number
-  default = 21474836480
-}
-
-variable "ubuntu_password_hash" {
-  type    = string
-  # echo "ChangeIt" | mkpasswd -m sha-512 -s
-  default = "$6$jG2acVK0aWkg1Nkz$0wuK5ZTYT3rtwru.LMnsgC2mKmoDMVijMoeCVkk8eOlW8j7Nz6PGlaxX2spMwon1FH.EvQBO1tlmZIJxMzrJm1"
-}
-
-locals {
-  ubuntu_image_url = "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
-
-  ubuntu_image_name = basename(local.ubuntu_image_url)
-
-  cloudinit_user_data = templatefile("${path.module}/cloud-init-user-data.yaml", {
-    vm_name                = var.vm_name
-    ubuntu_password_hash   = var.ubuntu_password_hash
-  })
-
-  cloudinit_meta_data = templatefile("${path.module}/cloud-init-meta-data.yaml", {
-    vm_name = var.vm_name
-  })
-
-  cloudinit_network_config = templatefile("${path.module}/cloud-init-network-config.yaml", {})
-}
-
-provider "libvirt" {
-  uri = "qemu:///system"
-}
-
-resource "libvirt_pool" "main" {
-  name = "kvmbox"
-  type = "dir"
-
-  target = {
-    # IMPORTANT : rester dans le répertoire par défaut de libvirt
-    # (sinon, problème avec apparmor)
-    path = "/var/lib/libvirt/images/kvmbox"
-  }
-}
-
-# Image de base téléchargée une seule fois
+# Base image, downloaded only once
 resource "libvirt_volume" "ubuntu_base" {
   name = local.ubuntu_image_name
-  pool = libvirt_pool.main.name
+  pool = var.storage_pool_name
 
   target = {
     format = {
@@ -78,12 +11,12 @@ resource "libvirt_volume" "ubuntu_base" {
 
   create = {
     content = {
-      url = local.ubuntu_image_url
+      url = var.ubuntu_image_url
     }
   }
 }
 
-# Disque de cloud-init généré à partir des données YAML
+# cloud-init disk generated from the YAML templates
 resource "libvirt_cloudinit_disk" "kvmbox" {
   name           = "${var.vm_name}-seed.iso"
   user_data      = local.cloudinit_user_data
@@ -93,7 +26,7 @@ resource "libvirt_cloudinit_disk" "kvmbox" {
 
 resource "libvirt_volume" "kvmbox_cloudinit" {
   name = "${var.vm_name}-cloudinit.iso"
-  pool = libvirt_pool.main.name
+  pool = var.storage_pool_name
 
   target = {
     format = {
@@ -108,10 +41,10 @@ resource "libvirt_volume" "kvmbox_cloudinit" {
   }
 }
 
-# Disque de la VM : copie COW de l'image de base
+# VM disk: copy-on-write overlay of the base image
 resource "libvirt_volume" "kvmbox_disk" {
   name     = "${var.vm_name}.os.qcow2"
-  pool     = libvirt_pool.main.name
+  pool     = var.storage_pool_name
   capacity = var.vm_disk_size_bytes
 
   target = {
@@ -131,8 +64,16 @@ resource "libvirt_volume" "kvmbox_disk" {
 resource "libvirt_domain" "kvmbox" {
   name   = var.vm_name
   type   = "kvm"
-  memory = var.vm_memory_mib * 1024 # KiB en provider 0.9.x
+  memory = var.vm_memory_mib * 1024 # KiB with provider 0.9.x
   vcpu   = var.vm_vcpus
+
+  # Disable AppArmor confinement of the VM (not possible on hosts without AppArmor, e.g. WSL2)
+  sec_label = var.disable_apparmor ? [
+    {
+      model = "apparmor"
+      type  = "none"
+    }
+  ] : null
 
   cpu = {
     mode = "host-passthrough"
@@ -147,8 +88,8 @@ resource "libvirt_domain" "kvmbox" {
     type_arch    = "x86_64"
     type_machine = "q35"
     firmware     = "efi"
-    # Désactive Secure Boot (libvirt 10+ l'active par défaut avec OVMF_CODE_4M.ms.fd)
-    # Ordre alphabétique obligatoire (bug provider 0.9.x)
+    # Disable Secure Boot (enabled by default since libvirt 10 with OVMF_CODE_4M.ms.fd)
+    # Alphabetical order required (provider 0.9.x bug)
     firmware_info = {
       features = [
         { enabled = "no", name = "enrolled-keys" },
@@ -160,14 +101,14 @@ resource "libvirt_domain" "kvmbox" {
   devices = {
     disks = [
       {
-        # Driver explicite obligatoire pour qcow2 en 0.9.x !
+        # Explicit driver required for qcow2 with provider 0.9.x!
         driver = {
           name = "qemu"
           type = "qcow2"
         }
         source = {
           volume = {
-            pool   = libvirt_pool.main.name
+            pool   = var.storage_pool_name
             volume = libvirt_volume.kvmbox_disk.name
           }
         }
@@ -184,7 +125,7 @@ resource "libvirt_domain" "kvmbox" {
         }
         source = {
           volume = {
-            pool   = libvirt_pool.main.name
+            pool   = var.storage_pool_name
             volume = libvirt_volume.kvmbox_cloudinit.name
           }
         }
@@ -196,22 +137,18 @@ resource "libvirt_domain" "kvmbox" {
     ]
     interfaces = [
       {
-        type  = "network"
+        type = "network"
         model = {
           type = "virtio"
         }
         source = {
           network = {
-            network = "default"
+            network = var.network_name
           }
-        }
-        wait_for_ip = {
-          source  = "lease"
-          timeout = 300
         }
       }
     ]
-    serials = [{ type = "pty", target = { port = 0, type = "isa-serial" } }]
+    serials  = [{ type = "pty", target = { port = 0, type = "isa-serial" } }]
     graphics = [{ spice = { autoport = "yes" } }]
   }
 

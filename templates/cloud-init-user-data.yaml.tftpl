@@ -18,5 +18,9 @@ packages:
   - curl
   - htop
 
+apt:
+  http_proxy: http://proxy.ign.fr:3128/
+  https_proxy: https://proxy.ign.fr:3128/
+
 runcmd:
   - echo 'Cloud-init termine' > /home/ubuntu/ready.txt
