@@ -1,0 +1,6 @@
+# Copier en terraform.tfvars puis adapter
+# vm_name              = "kvmbox"
+# vm_memory_mib        = 4096
+# vm_vcpus             = 4
+# vm_disk_size_bytes   = 42949672960
+# ubuntu_password_hash = "$6$..."

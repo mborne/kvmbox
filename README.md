@@ -7,6 +7,17 @@
 - Terraform or OpenTofu
 - libvirt / KVM
 
+## Structure
+
+| Fichier | Contenu |
+|---|---|
+| `providers.tf` | Versions de Terraform/OpenTofu, provider libvirt et sa configuration |
+| `variables.tf` | Paramètres (nom, CPU, RAM, disque, image, réseau...) et locals (rendu cloud-init) |
+| `main.tf` | Ressources : image de base, disque cloud-init, disque VM, domaine |
+| `outputs.tf` | Sorties |
+| `templates/` | Templates cloud-init (`user-data`, `meta-data`, `network-config`) |
+| `terraform.tfvars.example` | Exemple de surcharge des variables |
+
 ## Usage
 
 With Terraform :

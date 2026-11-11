@@ -1,64 +1,3 @@
-terraform {
-  required_providers {
-    libvirt = {
-      source = "dmacvicar/libvirt"
-      version = "~> 0.9.0"
-    }
-  }
-}
-
-variable "vm_name" {
-  type    = string
-  default = "kvmbox"
-}
-
-variable "vm_memory_mib" {
-  type    = number
-  default = 2048
-}
-
-variable "vm_vcpus" {
-  type    = number
-  default = 2
-}
-
-variable "vm_disk_size_bytes" {
-  type    = number
-  default = 21474836480
-}
-
-variable "storage_pool_name" {
-  type    = string
-  default = "default"
-}
-
-variable "ubuntu_password_hash" {
-  type    = string
-  # echo "ChangeIt" | mkpasswd -m sha-512 -s
-  default = "$6$jG2acVK0aWkg1Nkz$0wuK5ZTYT3rtwru.LMnsgC2mKmoDMVijMoeCVkk8eOlW8j7Nz6PGlaxX2spMwon1FH.EvQBO1tlmZIJxMzrJm1"
-}
-
-locals {
-  ubuntu_image_url = "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
-
-  ubuntu_image_name = basename(local.ubuntu_image_url)
-
-  cloudinit_user_data = templatefile("${path.module}/cloud-init-user-data.yaml", {
-    vm_name                = var.vm_name
-    ubuntu_password_hash   = var.ubuntu_password_hash
-  })
-
-  cloudinit_meta_data = templatefile("${path.module}/cloud-init-meta-data.yaml", {
-    vm_name = var.vm_name
-  })
-
-  cloudinit_network_config = templatefile("${path.module}/cloud-init-network-config.yaml", {})
-}
-
-provider "libvirt" {
-  uri = "qemu:///system"
-}
-
 # Image de base téléchargée une seule fois
 resource "libvirt_volume" "ubuntu_base" {
   name = local.ubuntu_image_name
@@ -72,7 +11,7 @@ resource "libvirt_volume" "ubuntu_base" {
 
   create = {
     content = {
-      url = local.ubuntu_image_url
+      url = var.ubuntu_image_url
     }
   }
 }
@@ -128,12 +67,13 @@ resource "libvirt_domain" "kvmbox" {
   memory = var.vm_memory_mib * 1024 # KiB en provider 0.9.x
   vcpu   = var.vm_vcpus
 
-  sec_label = [
+  # Désactive le confinement AppArmor de la VM (inutile/impossible sans AppArmor, ex. WSL2)
+  sec_label = var.disable_apparmor ? [
     {
       model = "apparmor"
       type  = "none"
     }
-  ]
+  ] : null
 
   cpu = {
     mode = "host-passthrough"
@@ -197,18 +137,18 @@ resource "libvirt_domain" "kvmbox" {
     ]
     interfaces = [
       {
-        type  = "network"
+        type = "network"
         model = {
           type = "virtio"
         }
         source = {
           network = {
-            network = "default"
+            network = var.network_name
           }
         }
       }
     ]
-    serials = [{ type = "pty", target = { port = 0, type = "isa-serial" } }]
+    serials  = [{ type = "pty", target = { port = 0, type = "isa-serial" } }]
     graphics = [{ spice = { autoport = "yes" } }]
   }
 
