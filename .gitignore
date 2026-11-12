@@ -38,3 +38,6 @@ override.tf.json
 
 # Generated SSH key pair
 .ssh/
+
+# Generated Ansible inventory
+inventory/
