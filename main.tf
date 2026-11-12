@@ -38,7 +38,7 @@ resource "libvirt_pool" "kvmbox" {
 }
 
 # Dedicated NAT network, nodes get fixed IPs through cloud-init
-resource "libvirt_network" "devbox" {
+resource "libvirt_network" "kvmbox" {
   name      = var.network_name
   autostart = true
 
@@ -53,7 +53,7 @@ resource "libvirt_network" "devbox" {
     }
   ]
 
-  # Local DNS domain (kvmbox-1.devbox, ...), used as search domain by the nodes
+  # Local DNS domain (kvmbox-1.kvmbox, ...), used as search domain by the nodes
   domain = {
     name       = var.network_name
     local_only = "yes"
@@ -223,7 +223,7 @@ resource "libvirt_domain" "node" {
         }
         source = {
           network = {
-            network = libvirt_network.devbox.name
+            network = libvirt_network.kvmbox.name
           }
         }
       }

@@ -41,7 +41,7 @@ The number of nodes is set with `num_nodes` (default: 1), nodes are named `kvmbo
 terraform apply -var num_nodes=4
 ```
 
-Nodes are attached to a dedicated NAT network `devbox` (`192.168.50.0/24`) with fixed IPs starting at `192.168.50.201` (same as vagrantbox), and can resolve each other by name (`kvmbox-2`, `kvmbox-2.devbox`). See `network_name`, `network_cidr` and `node_ip_start` variables.
+Nodes are attached to a dedicated NAT network `kvmbox` (`192.168.50.0/24`) with fixed IPs starting at `192.168.50.201` (same as vagrantbox), and can resolve each other by name (`kvmbox-2`, `kvmbox-2.kvmbox`). See `network_name`, `network_cidr` and `node_ip_start` variables.
 
 An SSH key pair is generated in `.ssh/` (password authentication is disabled):
 

@@ -19,7 +19,7 @@ variable "storage_pool_path" {
 variable "network_name" {
   description = "Name of the dedicated libvirt network created for the nodes (also used as DNS domain)"
   type        = string
-  default     = "devbox"
+  default     = "kvmbox"
 }
 
 variable "network_cidr" {
