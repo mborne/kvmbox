@@ -18,9 +18,33 @@ packages:
   - curl
   - htop
 
+%{ if http_proxy != "" || https_proxy != "" ~}
 apt:
-  http_proxy: http://proxy.ign.fr:3128/
-  https_proxy: https://proxy.ign.fr:3128/
+%{ if http_proxy != "" ~}
+  http_proxy: ${http_proxy}
+%{ endif ~}
+%{ if https_proxy != "" ~}
+  https_proxy: ${https_proxy}
+%{ endif ~}
+
+# System-wide proxy environment (curl, wget, ...)
+write_files:
+  - path: /etc/environment
+    append: true
+    content: |
+%{ if http_proxy != "" ~}
+      http_proxy=${http_proxy}
+      HTTP_PROXY=${http_proxy}
+%{ endif ~}
+%{ if https_proxy != "" ~}
+      https_proxy=${https_proxy}
+      HTTPS_PROXY=${https_proxy}
+%{ endif ~}
+%{ if no_proxy != "" ~}
+      no_proxy=${no_proxy}
+      NO_PROXY=${no_proxy}
+%{ endif ~}
+%{ endif ~}
 
 runcmd:
   - echo 'Cloud-init termine' > /home/ubuntu/ready.txt

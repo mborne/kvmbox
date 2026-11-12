@@ -4,3 +4,6 @@
 # vm_vcpus             = 4
 # vm_disk_size_bytes   = 42949672960
 # ubuntu_password_hash = "$6$..."
+# http_proxy           = "http://proxy.example.org:3128/"
+# https_proxy          = "http://proxy.example.org:3128/"
+# no_proxy             = "localhost,127.0.0.1,.example.org"

@@ -22,6 +22,24 @@ variable "disable_apparmor" {
   default     = false
 }
 
+variable "http_proxy" {
+  description = "HTTP proxy for APT in the VM (empty to disable)"
+  type        = string
+  default     = ""
+}
+
+variable "https_proxy" {
+  description = "HTTPS proxy for APT in the VM (empty to disable)"
+  type        = string
+  default     = ""
+}
+
+variable "no_proxy" {
+  description = "Comma-separated list of hosts/domains bypassing the proxy (set in /etc/environment, not used by APT)"
+  type        = string
+  default     = "localhost,127.0.0.1"
+}
+
 variable "ubuntu_image_url" {
   description = "URL of the Ubuntu cloud image used as base image"
   type        = string
@@ -64,6 +82,9 @@ locals {
   cloudinit_user_data = templatefile("${path.module}/templates/cloud-init-user-data.yaml.tftpl", {
     vm_name              = var.vm_name
     ubuntu_password_hash = var.ubuntu_password_hash
+    http_proxy           = var.http_proxy
+    https_proxy          = var.https_proxy
+    no_proxy             = var.no_proxy
   })
 
   cloudinit_meta_data = templatefile("${path.module}/templates/cloud-init-meta-data.yaml.tftpl", {
