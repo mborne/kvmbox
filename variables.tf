@@ -17,9 +17,21 @@ variable "storage_pool_path" {
 }
 
 variable "network_name" {
-  description = "libvirt network the nodes are attached to"
+  description = "Name of the dedicated libvirt network created for the nodes (also used as DNS domain)"
   type        = string
-  default     = "default"
+  default     = "devbox"
+}
+
+variable "network_cidr" {
+  description = "CIDR of the dedicated network (NAT, the gateway is the first host)"
+  type        = string
+  default     = "192.168.50.0/24"
+}
+
+variable "node_ip_start" {
+  description = "Host number of the first node in network_cidr (201 => 192.168.50.201, 192.168.50.202, ...)"
+  type        = number
+  default     = 201
 }
 
 variable "disable_apparmor" {
@@ -100,6 +112,13 @@ locals {
 
   node_names = [for i in range(1, var.num_nodes + 1) : format("%s-%d", var.vm_name_prefix, i)]
 
+  network_gateway = cidrhost(var.network_cidr, 1)
+  network_prefix  = tonumber(split("/", var.network_cidr)[1])
+
+  node_ips = {
+    for i, name in local.node_names : name => cidrhost(var.network_cidr, var.node_ip_start + i)
+  }
+
   cloudinit = {
     for name in local.node_names : name => {
       user_data = templatefile("${path.module}/cloud-init/user-data.yaml.tftpl", {
@@ -112,8 +131,11 @@ locals {
       meta_data = templatefile("${path.module}/cloud-init/meta-data.yaml.tftpl", {
         vm_name = name
       })
+      network_config = templatefile("${path.module}/cloud-init/network-config.yaml.tftpl", {
+        address = "${local.node_ips[name]}/${local.network_prefix}"
+        gateway = local.network_gateway
+        domain  = var.network_name
+      })
     }
   }
-
-  cloudinit_network_config = file("${path.module}/cloud-init/network-config.yaml")
 }

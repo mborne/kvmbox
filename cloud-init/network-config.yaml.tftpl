@@ -1,0 +1,15 @@
+version: 2
+renderer: networkd
+ethernets:
+  enp1s0:
+    dhcp4: false
+    addresses:
+      - ${address}
+    routes:
+      - to: default
+        via: ${gateway}
+    nameservers:
+      addresses:
+        - ${gateway}
+      search:
+        - ${domain}
