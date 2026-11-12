@@ -5,9 +5,15 @@ variable "libvirt_uri" {
 }
 
 variable "storage_pool_name" {
-  description = "libvirt storage pool used for the volumes"
+  description = "Name of the dedicated libvirt storage pool created for the volumes"
   type        = string
-  default     = "default"
+  default     = "kvmbox"
+}
+
+variable "storage_pool_path" {
+  description = "Directory of the storage pool on the host (created by libvirtd)"
+  type        = string
+  default     = "/var/lib/libvirt/images/kvmbox"
 }
 
 variable "network_name" {

@@ -1,7 +1,27 @@
+# Dedicated storage pool for the project volumes
+resource "libvirt_pool" "kvmbox" {
+  name = var.storage_pool_name
+  type = "dir"
+
+  target = {
+    path = var.storage_pool_path
+  }
+
+  create = {
+    build     = true
+    start     = true
+    autostart = true
+  }
+
+  destroy = {
+    delete = true
+  }
+}
+
 # Base image, downloaded only once
 resource "libvirt_volume" "ubuntu_base" {
   name = local.ubuntu_image_name
-  pool = var.storage_pool_name
+  pool = libvirt_pool.kvmbox.name
 
   target = {
     format = {
@@ -26,7 +46,7 @@ resource "libvirt_cloudinit_disk" "kvmbox" {
 
 resource "libvirt_volume" "kvmbox_cloudinit" {
   name = "${var.vm_name}-cloudinit.iso"
-  pool = var.storage_pool_name
+  pool = libvirt_pool.kvmbox.name
 
   target = {
     format = {
@@ -44,7 +64,7 @@ resource "libvirt_volume" "kvmbox_cloudinit" {
 # VM disk: copy-on-write overlay of the base image
 resource "libvirt_volume" "kvmbox_disk" {
   name     = "${var.vm_name}.os.qcow2"
-  pool     = var.storage_pool_name
+  pool     = libvirt_pool.kvmbox.name
   capacity = var.vm_disk_size_bytes
 
   target = {
@@ -108,7 +128,7 @@ resource "libvirt_domain" "kvmbox" {
         }
         source = {
           volume = {
-            pool   = var.storage_pool_name
+            pool   = libvirt_pool.kvmbox.name
             volume = libvirt_volume.kvmbox_disk.name
           }
         }
@@ -125,7 +145,7 @@ resource "libvirt_domain" "kvmbox" {
         }
         source = {
           volume = {
-            pool   = var.storage_pool_name
+            pool   = libvirt_pool.kvmbox.name
             volume = libvirt_volume.kvmbox_cloudinit.name
           }
         }
