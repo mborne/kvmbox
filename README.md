@@ -9,14 +9,14 @@
 
 ## Structure
 
-| File | Content |
-|---|---|
-| `providers.tf` | Terraform/OpenTofu and libvirt provider versions, provider configuration |
-| `variables.tf` | Parameters (name, CPU, RAM, disk, image, network...) and locals (cloud-init rendering) |
-| `main.tf` | Resources: base image, cloud-init disk, VM disk, domain |
-| `outputs.tf` | Outputs |
-| `cloud-init/` | cloud-init templates (`user-data`, `meta-data`, `network-config`) |
-| `terraform.tfvars.example` | Example of variable overrides |
+| File                       | Content                                                                                |
+| -------------------------- | -------------------------------------------------------------------------------------- |
+| `providers.tf`             | Terraform/OpenTofu and libvirt provider versions, provider configuration               |
+| `variables.tf`             | Parameters (name, CPU, RAM, disk, image, network...) and locals (cloud-init rendering) |
+| `main.tf`                  | Resources: base image, cloud-init disk, VM disk, domain                                |
+| `outputs.tf`               | Outputs                                                                                |
+| `cloud-init/`              | cloud-init templates (`user-data`, `meta-data`, `network-config`)                      |
+| `terraform.tfvars.example` | Example of variable overrides                                                          |
 
 ## Usage
 
@@ -31,10 +31,17 @@ terraform apply
 terraform destroy
 ```
 
+The number of nodes is set with `num_nodes` (default: 1), nodes are named `kvmbox-01`, `kvmbox-02`, ...:
+
+```bash
+terraform apply -var num_nodes=3
+```
+
 An SSH key pair is generated in `.ssh/` (password authentication is disabled):
 
 ```bash
-ssh -i .ssh/id_ed25519 ubuntu@$(terraform output -raw vm_ip)
+terraform output ssh_commands
+ssh -i .ssh/id_ed25519 ubuntu@$(terraform output -json node_ips | jq -r '."kvmbox-01"')
 ```
 
 ## Resources

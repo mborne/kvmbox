@@ -1,4 +1,4 @@
-# SSH key pair used to connect to the VM (ssh -i .ssh/id_ed25519 ubuntu@<ip>)
+# SSH key pair used to connect to the VM (ssh -i .ssh/id_ed25519 ubuntu@<node-ip>)
 resource "tls_private_key" "ssh" {
   algorithm = "ED25519"
 }
@@ -55,16 +55,20 @@ resource "libvirt_volume" "ubuntu_base" {
   }
 }
 
-# cloud-init disk generated from the YAML templates
-resource "libvirt_cloudinit_disk" "kvmbox" {
-  name           = "${var.vm_name}-seed.iso"
-  user_data      = local.cloudinit_user_data
-  meta_data      = local.cloudinit_meta_data
+# cloud-init disk generated from the YAML templates (one per node)
+resource "libvirt_cloudinit_disk" "node" {
+  for_each = local.cloudinit
+
+  name           = "${each.key}-seed.iso"
+  user_data      = each.value.user_data
+  meta_data      = each.value.meta_data
   network_config = local.cloudinit_network_config
 }
 
-resource "libvirt_volume" "kvmbox_cloudinit" {
-  name = "${var.vm_name}-cloudinit.iso"
+resource "libvirt_volume" "node_cloudinit" {
+  for_each = libvirt_cloudinit_disk.node
+
+  name = "${each.key}-cloudinit.iso"
   pool = libvirt_pool.kvmbox.name
 
   target = {
@@ -75,14 +79,16 @@ resource "libvirt_volume" "kvmbox_cloudinit" {
 
   create = {
     content = {
-      url = libvirt_cloudinit_disk.kvmbox.path
+      url = each.value.path
     }
   }
 }
 
-# VM disk: copy-on-write overlay of the base image
-resource "libvirt_volume" "kvmbox_disk" {
-  name     = "${var.vm_name}.os.qcow2"
+# Node disk: copy-on-write overlay of the base image
+resource "libvirt_volume" "node_disk" {
+  for_each = toset(local.node_names)
+
+  name     = "${each.key}.os.qcow2"
   pool     = libvirt_pool.kvmbox.name
   capacity = var.vm_disk_size_bytes
 
@@ -100,8 +106,10 @@ resource "libvirt_volume" "kvmbox_disk" {
   }
 }
 
-resource "libvirt_domain" "kvmbox" {
-  name   = var.vm_name
+resource "libvirt_domain" "node" {
+  for_each = toset(local.node_names)
+
+  name   = each.key
   type   = "kvm"
   memory = var.vm_memory_mib * 1024 # KiB with provider 0.9.x
   vcpu   = var.vm_vcpus
@@ -148,7 +156,7 @@ resource "libvirt_domain" "kvmbox" {
         source = {
           volume = {
             pool   = libvirt_pool.kvmbox.name
-            volume = libvirt_volume.kvmbox_disk.name
+            volume = libvirt_volume.node_disk[each.key].name
           }
         }
         target = {
@@ -165,7 +173,7 @@ resource "libvirt_domain" "kvmbox" {
         source = {
           volume = {
             pool   = libvirt_pool.kvmbox.name
-            volume = libvirt_volume.kvmbox_cloudinit.name
+            volume = libvirt_volume.node_cloudinit[each.key].name
           }
         }
         target = {
@@ -184,6 +192,12 @@ resource "libvirt_domain" "kvmbox" {
           network = {
             network = var.network_name
           }
+        }
+        # Wait for the DHCP lease so that node_ips is known at the end of apply
+        wait_for_ip = {
+          source  = "lease"
+          network = "0.0.0.0/0"
+          timeout = 300
         }
       }
     ]
