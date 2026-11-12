@@ -1,5 +1,6 @@
 # Copy to terraform.tfvars and adjust
-# vm_name              = "kvmbox"
+# num_nodes            = 3
+# vm_name_prefix       = "kvmbox"
 # vm_memory_mib        = 4096
 # vm_vcpus             = 4
 # vm_disk_size_bytes   = 42949672960

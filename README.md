@@ -31,10 +31,17 @@ terraform apply
 terraform destroy
 ```
 
+The number of nodes is set with `num_nodes` (default: 1), nodes are named `kvmbox-01`, `kvmbox-02`, ...:
+
+```bash
+terraform apply -var num_nodes=3
+```
+
 An SSH key pair is generated in `.ssh/` (password authentication is disabled):
 
 ```bash
-ssh -i .ssh/id_ed25519 ubuntu@$(terraform output -raw vm_ip)
+terraform output ssh_commands
+ssh -i .ssh/id_ed25519 ubuntu@$(terraform output -json node_ips | jq -r '."kvmbox-01"')
 ```
 
 ## Resources
