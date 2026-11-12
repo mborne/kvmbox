@@ -85,7 +85,7 @@ variable "ubuntu_password_hash" {
 locals {
   ubuntu_image_name = basename(var.ubuntu_image_url)
 
-  cloudinit_user_data = templatefile("${path.module}/templates/cloud-init-user-data.yaml.tftpl", {
+  cloudinit_user_data = templatefile("${path.module}/cloud-init/user-data.yaml.tftpl", {
     vm_name              = var.vm_name
     ubuntu_password_hash = var.ubuntu_password_hash
     http_proxy           = var.http_proxy
@@ -93,9 +93,9 @@ locals {
     no_proxy             = var.no_proxy
   })
 
-  cloudinit_meta_data = templatefile("${path.module}/templates/cloud-init-meta-data.yaml.tftpl", {
+  cloudinit_meta_data = templatefile("${path.module}/cloud-init/meta-data.yaml.tftpl", {
     vm_name = var.vm_name
   })
 
-  cloudinit_network_config = file("${path.module}/templates/cloud-init-network-config.yaml")
+  cloudinit_network_config = file("${path.module}/cloud-init/network-config.yaml")
 }
