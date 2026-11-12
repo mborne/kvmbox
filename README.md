@@ -9,14 +9,14 @@
 
 ## Structure
 
-| File | Content |
-|---|---|
-| `providers.tf` | Terraform/OpenTofu and libvirt provider versions, provider configuration |
-| `variables.tf` | Parameters (name, CPU, RAM, disk, image, network...) and locals (cloud-init rendering) |
-| `main.tf` | Resources: base image, cloud-init disk, VM disk, domain |
-| `outputs.tf` | Outputs |
-| `cloud-init/` | cloud-init templates (`user-data`, `meta-data`, `network-config`) |
-| `terraform.tfvars.example` | Example of variable overrides |
+| File                       | Content                                                                                |
+| -------------------------- | -------------------------------------------------------------------------------------- |
+| `providers.tf`             | Terraform/OpenTofu and libvirt provider versions, provider configuration               |
+| `variables.tf`             | Parameters (name, CPU, RAM, disk, image, network...) and locals (cloud-init rendering) |
+| `main.tf`                  | Resources: base image, cloud-init disk, VM disk, domain                                |
+| `outputs.tf`               | Outputs                                                                                |
+| `cloud-init/`              | cloud-init templates (`user-data`, `meta-data`, `network-config`)                      |
+| `terraform.tfvars.example` | Example of variable overrides                                                          |
 
 ## Usage
 
