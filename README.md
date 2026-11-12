@@ -35,17 +35,17 @@ terraform apply
 terraform destroy
 ```
 
-The number of nodes is set with `num_nodes` (default: 1), nodes are named `kvmbox-01`, `kvmbox-02`, ...:
+The number of nodes is set with `num_nodes` (default: 1), nodes are named `kvmbox-1`, `kvmbox-2`, ...:
 
 ```bash
-terraform apply -var num_nodes=3
+terraform apply -var num_nodes=4
 ```
 
 An SSH key pair is generated in `.ssh/` (password authentication is disabled):
 
 ```bash
 terraform output ssh_commands
-ssh -i .ssh/id_ed25519 ubuntu@$(terraform output -json node_ips | jq -r '."kvmbox-01"')
+ssh -i .ssh/id_ed25519 ubuntu@$(terraform output -json node_ips | jq -r '."kvmbox-1"')
 ```
 
 An Ansible inventory is generated in `inventory/hosts` (group `kvmbox`), `ansible.cfg` makes it the default inventory:
