@@ -70,7 +70,7 @@ variable "num_nodes" {
 }
 
 variable "vm_name_prefix" {
-  description = "Prefix of the node names (libvirt domain and hostname): <prefix>-01, <prefix>-02, ..."
+  description = "Prefix of the node names (libvirt domain and hostname): <prefix>-1, <prefix>-2, ..."
   type        = string
   default     = "kvmbox"
 }
@@ -98,7 +98,7 @@ locals {
 
   ssh_private_key_path = "${var.ssh_key_dir}/id_ed25519"
 
-  node_names = [for i in range(1, var.num_nodes + 1) : format("%s-%02d", var.vm_name_prefix, i)]
+  node_names = [for i in range(1, var.num_nodes + 1) : format("%s-%d", var.vm_name_prefix, i)]
 
   cloudinit = {
     for name in local.node_names : name => {

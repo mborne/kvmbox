@@ -6,6 +6,7 @@
 
 - Terraform or OpenTofu
 - libvirt / KVM
+- [Ansible](https://docs.ansible.com/) (optional, to use the generated inventory)
 
 ## Structure
 
@@ -14,8 +15,11 @@
 | `providers.tf`             | Terraform/OpenTofu and libvirt provider versions, provider configuration               |
 | `variables.tf`             | Parameters (name, CPU, RAM, disk, image, network...) and locals (cloud-init rendering) |
 | `main.tf`                  | Resources: base image, cloud-init disk, VM disk, domain                                |
+| `ansible.tf`               | Generated Ansible inventory (`inventory/hosts`)                                        |
 | `outputs.tf`               | Outputs                                                                                |
 | `cloud-init/`              | cloud-init templates (`user-data`, `meta-data`, `network-config`)                      |
+| `ansible/`                 | Ansible inventory template                                                             |
+| `ansible.cfg`              | Ansible configuration (uses `inventory/`)                                              |
 | `terraform.tfvars.example` | Example of variable overrides                                                          |
 
 ## Usage
@@ -31,17 +35,23 @@ terraform apply
 terraform destroy
 ```
 
-The number of nodes is set with `num_nodes` (default: 1), nodes are named `kvmbox-01`, `kvmbox-02`, ...:
+The number of nodes is set with `num_nodes` (default: 1), nodes are named `kvmbox-1`, `kvmbox-2`, ...:
 
 ```bash
-terraform apply -var num_nodes=3
+terraform apply -var num_nodes=4
 ```
 
 An SSH key pair is generated in `.ssh/` (password authentication is disabled):
 
 ```bash
 terraform output ssh_commands
-ssh -i .ssh/id_ed25519 ubuntu@$(terraform output -json node_ips | jq -r '."kvmbox-01"')
+ssh -i .ssh/id_ed25519 ubuntu@$(terraform output -json node_ips | jq -r '."kvmbox-1"')
+```
+
+An Ansible inventory is generated in `inventory/hosts` (group `kvmbox`), `ansible.cfg` makes it the default inventory:
+
+```bash
+ansible all -m ping
 ```
 
 ## Resources

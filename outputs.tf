@@ -25,3 +25,8 @@ output "ssh_commands" {
     for name, ip in local.node_ips : name => ip == null ? null : "ssh -i ${local.ssh_private_key_path} ubuntu@${ip}"
   }
 }
+
+output "ansible_inventory" {
+  description = "Path of the generated Ansible inventory"
+  value       = local_file.ansible_inventory.filename
+}
