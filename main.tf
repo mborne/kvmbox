@@ -37,6 +37,39 @@ resource "libvirt_pool" "kvmbox" {
   }
 }
 
+# Dedicated NAT network, nodes get fixed IPs through cloud-init
+resource "libvirt_network" "kvmbox" {
+  name      = var.network_name
+  autostart = true
+
+  forward = {
+    mode = "nat"
+  }
+
+  ips = [
+    {
+      address = local.network_gateway
+      prefix  = local.network_prefix
+    }
+  ]
+
+  # Local DNS domain (kvmbox-1.kvmbox, ...), used as search domain by the nodes
+  domain = {
+    name       = var.network_name
+    local_only = "yes"
+  }
+
+  # Nodes can resolve each other by name (kvmbox-1, kvmbox-2, ...)
+  dns = {
+    host = [
+      for name, ip in local.node_ips : {
+        ip        = ip
+        hostnames = [{ hostname = name }]
+      }
+    ]
+  }
+}
+
 # Base image, downloaded only once
 resource "libvirt_volume" "ubuntu_base" {
   name = local.ubuntu_image_name
@@ -62,7 +95,7 @@ resource "libvirt_cloudinit_disk" "node" {
   name           = "${each.key}-seed.iso"
   user_data      = each.value.user_data
   meta_data      = each.value.meta_data
-  network_config = local.cloudinit_network_config
+  network_config = each.value.network_config
 }
 
 resource "libvirt_volume" "node_cloudinit" {
@@ -190,14 +223,8 @@ resource "libvirt_domain" "node" {
         }
         source = {
           network = {
-            network = var.network_name
+            network = libvirt_network.kvmbox.name
           }
-        }
-        # Wait for the DHCP lease so that node_ips is known at the end of apply
-        wait_for_ip = {
-          source  = "lease"
-          network = "0.0.0.0/0"
-          timeout = 300
         }
       }
     ]

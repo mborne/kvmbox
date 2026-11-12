@@ -10,17 +10,17 @@
 
 ## Structure
 
-| File                       | Content                                                                                |
-| -------------------------- | -------------------------------------------------------------------------------------- |
-| `providers.tf`             | Terraform/OpenTofu and libvirt provider versions, provider configuration               |
-| `variables.tf`             | Parameters (name, CPU, RAM, disk, image, network...) and locals (cloud-init rendering) |
-| `main.tf`                  | Resources: base image, cloud-init disk, VM disk, domain                                |
-| `ansible.tf`               | Generated Ansible inventory (`inventory/hosts`)                                        |
-| `outputs.tf`               | Outputs                                                                                |
-| `cloud-init/`              | cloud-init templates (`user-data`, `meta-data`, `network-config`)                      |
-| `ansible/`                 | Ansible inventory template                                                             |
-| `ansible.cfg`              | Ansible configuration (uses `inventory/`)                                              |
-| `terraform.tfvars.example` | Example of variable overrides                                                          |
+| File                       | Content                                                                                 |
+| -------------------------- | --------------------------------------------------------------------------------------- |
+| `providers.tf`             | Terraform/OpenTofu and libvirt provider versions, provider configuration                |
+| `variables.tf`             | Parameters (name, CPU, RAM, disk, image, network...) and locals (cloud-init rendering)  |
+| `main.tf`                  | Resources: SSH key, storage pool, network, base image, cloud-init disk, VM disk, domain |
+| `ansible.tf`               | Generated Ansible inventory (`inventory/hosts`)                                         |
+| `outputs.tf`               | Outputs                                                                                 |
+| `cloud-init/`              | cloud-init templates (`user-data`, `meta-data`, `network-config` with the fixed IP)     |
+| `ansible/`                 | Ansible inventory template                                                              |
+| `ansible.cfg`              | Ansible configuration (uses `inventory/`)                                               |
+| `terraform.tfvars.example` | Example of variable overrides                                                           |
 
 ## Usage
 
@@ -41,11 +41,13 @@ The number of nodes is set with `num_nodes` (default: 1), nodes are named `kvmbo
 terraform apply -var num_nodes=4
 ```
 
+Nodes are attached to a dedicated NAT network `kvmbox` (`192.168.50.0/24`) with fixed IPs starting at `192.168.50.201` (same as vagrantbox), and can resolve each other by name (`kvmbox-2`, `kvmbox-2.kvmbox`). See `network_name`, `network_cidr` and `node_ip_start` variables.
+
 An SSH key pair is generated in `.ssh/` (password authentication is disabled):
 
 ```bash
 terraform output ssh_commands
-ssh -i .ssh/id_ed25519 ubuntu@$(terraform output -json node_ips | jq -r '."kvmbox-1"')
+ssh -i .ssh/id_ed25519 ubuntu@192.168.50.201
 ```
 
 An Ansible inventory is generated in `inventory/hosts` (group `kvmbox`), `ansible.cfg` makes it the default inventory:
