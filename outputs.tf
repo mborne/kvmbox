@@ -15,7 +15,7 @@ locals {
 }
 
 output "node_ips" {
-  description = "IPv4 address of each node (null until the DHCP lease is known, run 'tofu refresh')"
+  description = "IPv4 address of each node"
   value       = local.node_ips
 }
 

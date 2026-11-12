@@ -193,6 +193,12 @@ resource "libvirt_domain" "node" {
             network = var.network_name
           }
         }
+        # Wait for the DHCP lease so that node_ips is known at the end of apply
+        wait_for_ip = {
+          source  = "lease"
+          network = "0.0.0.0/0"
+          timeout = 300
+        }
       }
     ]
     serials  = [{ type = "pty", target = { port = 0, type = "isa-serial" } }]
