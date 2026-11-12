@@ -31,6 +31,12 @@ terraform apply
 terraform destroy
 ```
 
+An SSH key pair is generated in `.ssh/` (password authentication is disabled):
+
+```bash
+ssh -i .ssh/id_ed25519 ubuntu@$(terraform output -raw vm_ip)
+```
+
 ## Resources
 
 * https://registry.terraform.io/providers/dmacvicar/libvirt/latest/docs

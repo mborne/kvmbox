@@ -35,3 +35,6 @@ override.tf.json
 
 # Terraform lock info
 .terraform.tfstate.lock.info
+
+# Generated SSH key pair
+.ssh/

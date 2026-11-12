@@ -46,6 +46,12 @@ variable "no_proxy" {
   default     = "localhost,127.0.0.1"
 }
 
+variable "ssh_key_dir" {
+  description = "Directory where the generated SSH key pair is written (relative to the module)"
+  type        = string
+  default     = ".ssh"
+}
+
 variable "ubuntu_image_url" {
   description = "URL of the Ubuntu cloud image used as base image"
   type        = string
@@ -76,21 +82,17 @@ variable "vm_disk_size_bytes" {
   default     = 21474836480 # 20 GiB
 }
 
-variable "ubuntu_password_hash" {
-  description = "SHA-512 hash of the ubuntu user password (echo \"ChangeIt\" | mkpasswd -m sha-512 -s)"
-  type        = string
-  default     = "$6$jG2acVK0aWkg1Nkz$0wuK5ZTYT3rtwru.LMnsgC2mKmoDMVijMoeCVkk8eOlW8j7Nz6PGlaxX2spMwon1FH.EvQBO1tlmZIJxMzrJm1"
-}
-
 locals {
   ubuntu_image_name = basename(var.ubuntu_image_url)
 
+  ssh_private_key_path = "${var.ssh_key_dir}/id_ed25519"
+
   cloudinit_user_data = templatefile("${path.module}/cloud-init/user-data.yaml.tftpl", {
-    vm_name              = var.vm_name
-    ubuntu_password_hash = var.ubuntu_password_hash
-    http_proxy           = var.http_proxy
-    https_proxy          = var.https_proxy
-    no_proxy             = var.no_proxy
+    vm_name        = var.vm_name
+    ssh_public_key = trimspace(tls_private_key.ssh.public_key_openssh)
+    http_proxy     = var.http_proxy
+    https_proxy    = var.https_proxy
+    no_proxy       = var.no_proxy
   })
 
   cloudinit_meta_data = templatefile("${path.module}/cloud-init/meta-data.yaml.tftpl", {

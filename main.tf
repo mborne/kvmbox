@@ -1,3 +1,22 @@
+# SSH key pair used to connect to the VM (ssh -i .ssh/id_ed25519 ubuntu@<ip>)
+resource "tls_private_key" "ssh" {
+  algorithm = "ED25519"
+}
+
+resource "local_sensitive_file" "ssh_private_key" {
+  filename             = "${path.module}/${local.ssh_private_key_path}"
+  content              = tls_private_key.ssh.private_key_openssh
+  file_permission      = "0600"
+  directory_permission = "0700"
+}
+
+resource "local_file" "ssh_public_key" {
+  filename             = "${path.module}/${local.ssh_private_key_path}.pub"
+  content              = tls_private_key.ssh.public_key_openssh
+  file_permission      = "0644"
+  directory_permission = "0700"
+}
+
 # Dedicated storage pool for the project volumes
 resource "libvirt_pool" "kvmbox" {
   name = var.storage_pool_name

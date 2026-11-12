@@ -23,10 +23,5 @@ output "vm_ip" {
 
 output "ssh_command" {
   description = "SSH command to connect to the VM"
-  value       = local.vm_ip == null ? null : "ssh ubuntu@${local.vm_ip}"
-}
-
-output "console_command" {
-  description = "virsh command to open the VM serial console (exit with Ctrl+])"
-  value       = "virsh -c ${var.libvirt_uri} console ${libvirt_domain.kvmbox.name}"
+  value       = local.vm_ip == null ? null : "ssh -i ${local.ssh_private_key_path} ubuntu@${local.vm_ip}"
 }
